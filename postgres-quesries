@@ -1,0 +1,147 @@
+-- Table: public.Commit
+
+-- DROP TABLE IF EXISTS public."Commit";
+
+CREATE TABLE IF NOT EXISTS public."Commit"
+(
+    id text COLLATE pg_catalog."default" NOT NULL,
+    "createdAt" timestamp(3) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "projectId" text COLLATE pg_catalog."default" NOT NULL,
+    "commitMessage" text COLLATE pg_catalog."default" NOT NULL,
+    "commitHash" text COLLATE pg_catalog."default" NOT NULL,
+    "commitAuthorName" text COLLATE pg_catalog."default" NOT NULL,
+    "commitAuthorAvatar" text COLLATE pg_catalog."default" NOT NULL,
+    "commitDate" timestamp(3) without time zone NOT NULL,
+    summary text COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT "Commit_pkey" PRIMARY KEY (id),
+    CONSTRAINT "Commit_projectId_fkey" FOREIGN KEY ("projectId")
+        REFERENCES public."Project" (id) MATCH SIMPLE
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public."Commit"
+    OWNER to postgres;
+
+----------------------------------------------------------------
+-- Table: public.Project
+
+-- DROP TABLE IF EXISTS public."Project";
+
+CREATE TABLE IF NOT EXISTS public."Project"
+(
+    id text COLLATE pg_catalog."default" NOT NULL,
+    "createdAt" timestamp(3) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    name text COLLATE pg_catalog."default" NOT NULL,
+    "githubUrl" text COLLATE pg_catalog."default" NOT NULL,
+    "deletedAt" timestamp(3) without time zone,
+    CONSTRAINT "Project_pkey" PRIMARY KEY (id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public."Project"
+    OWNER to postgres;
+	
+-----------------------------------------------------------
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Table: public.SourceCodeEmbedding
+
+-- DROP TABLE IF EXISTS public."SourceCodeEmbedding";
+
+CREATE TABLE IF NOT EXISTS public."SourceCodeEmbedding"
+(
+    id text COLLATE pg_catalog."default" NOT NULL,
+    "summaryEmbedding" vector(768),
+    "sourceCode" text COLLATE pg_catalog."default" NOT NULL,
+    "fileName" text COLLATE pg_catalog."default" NOT NULL,
+    summary text COLLATE pg_catalog."default" NOT NULL,
+    "projectId" text COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT "SourceCodeEmbedding_pkey" PRIMARY KEY (id),
+    CONSTRAINT "SourceCodeEmbedding_projectId_fkey" FOREIGN KEY ("projectId")
+        REFERENCES public."Project" (id) MATCH SIMPLE
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public."SourceCodeEmbedding"
+    OWNER to neondb_owner;
+	
+----------------------------------------------------------------	
+-- Table: public.User
+
+-- DROP TABLE IF EXISTS public."User";
+
+CREATE TABLE IF NOT EXISTS public."User"
+(
+    id text COLLATE pg_catalog."default" NOT NULL,
+    "createdAt" timestamp(3) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "imageUrl" text COLLATE pg_catalog."default",
+    "firstName" text COLLATE pg_catalog."default",
+    "lastName" text COLLATE pg_catalog."default",
+    "emailAddress" text COLLATE pg_catalog."default" NOT NULL,
+    credits integer NOT NULL DEFAULT 150,
+    CONSTRAINT "User_pkey" PRIMARY KEY (id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public."User"
+    OWNER to neondb_owner;
+-- Index: User_emailAddress_key
+
+-- DROP INDEX IF EXISTS public."User_emailAddress_key";
+
+CREATE UNIQUE INDEX IF NOT EXISTS "User_emailAddress_key"
+    ON public."User" USING btree
+    ("emailAddress" COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+------------------------------------------------------------	
+-- Table: public.UserToProject
+
+-- DROP TABLE IF EXISTS public."UserToProject";
+
+CREATE TABLE IF NOT EXISTS public."UserToProject"
+(
+    id text COLLATE pg_catalog."default" NOT NULL,
+    "createdAt" timestamp(3) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "userId" text COLLATE pg_catalog."default" NOT NULL,
+    "projectId" text COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT "UserToProject_pkey" PRIMARY KEY (id),
+    CONSTRAINT "UserToProject_projectId_fkey" FOREIGN KEY ("projectId")
+        REFERENCES public."Project" (id) MATCH SIMPLE
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT "UserToProject_userId_fkey" FOREIGN KEY ("userId")
+        REFERENCES public."User" (id) MATCH SIMPLE
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public."UserToProject"
+    OWNER to neondb_owner;
+-- Index: UserToProject_userId_projectId_key
+
+-- DROP INDEX IF EXISTS public."UserToProject_userId_projectId_key";
+
+CREATE UNIQUE INDEX IF NOT EXISTS "UserToProject_userId_projectId_key"
+    ON public."UserToProject" USING btree
+    ("userId" COLLATE pg_catalog."default" ASC NULLS LAST, "projectId" COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+
+
+	
