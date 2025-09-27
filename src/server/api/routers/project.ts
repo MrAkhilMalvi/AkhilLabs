@@ -50,22 +50,39 @@ export const projectRouter = createTRPCRouter({
       },
     });
   }),
-  getCommits: protectedProcedure
-    .input(
-      z.object({
+  getCommits: protectedProcedure.input(z.object({
         projectId: z.string(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        await pollCommits(input.projectId);
-      } catch (err) {
-        console.error(err);
-      }
-
-      return await ctx.db.commit.findMany({
-        where: { projectId: input.projectId },
-        // orderBy: { createdAt: 'desc' }, // optional: newest first
-      });
+      }),).query(async ({ ctx, input }) => {
+         pollCommits(input.projectId).then().catch(console.error)
+         return await ctx.db.commit.findMany({where: { projectId: input.projectId } })
     }),
+    saveAnswer: protectedProcedure.input(z.object({
+      projectId: z.string(),
+      question: z.string(),
+      answer: z.string(),
+      filesReferences: z.any()
+    })).mutation(async ({ ctx, input }) => {
+      return await ctx.db.question.create({
+        data: {
+          answer: input.answer,
+          filesReferences: input.filesReferences,
+          projectId:input.projectId,
+          question: input.question,
+          userId: ctx.user.userId!
+        }
+      })
+    }),
+    getQuestions: protectedProcedure.input(z.object({projectId: z.string() })).query(async({ ctx, input }) => {
+      return await ctx.db.question.findMany({
+        where: {
+          projectId: input.projectId
+        },
+        include: {
+          user: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+      })
+    })
 });
